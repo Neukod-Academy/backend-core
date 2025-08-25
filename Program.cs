@@ -37,4 +37,11 @@ app.MapGet("/", () =>
 }).WithName("HelloApi");
 
 
+app.MapPost("/trial", (Trial NewTrial) =>
+    {
+        Console.WriteLine("new trial: ", NewTrial);
+        return Results.Created("/trial",NewTrial);
+    }
+).WithName("TrialPost");
+
 app.Run();
