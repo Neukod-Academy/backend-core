@@ -1,15 +1,19 @@
 
+using System.Text.Json.Serialization;
+
 class User
 {
-    String? Name { get; set; }
-    Role Role { get; set; }
+    [JsonPropertyName("name")]
+    public String? Name { get; set; }
+    [JsonPropertyName("role")]
+    public Role Role { get; set; }
 }
 
 
 enum Role
 {
-    Visitor = 0,
-    Parent = 1,
-    Student = 2,
-    Teacher = 3,
+    Visitor,
+    Parent,
+    Student,
+    Teacher,
 }

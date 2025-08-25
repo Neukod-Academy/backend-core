@@ -1,3 +1,5 @@
+using System.Text.Json.Serialization;
+
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
@@ -12,7 +14,10 @@ builder.Services.AddOpenApiDocument(config =>
 });
 
 
-
+builder.Services.ConfigureHttpJsonOptions(options =>
+{
+    options.SerializerOptions.Converters.Add(new JsonStringEnumConverter());
+});
 var app = builder.Build();
 
 if (app.Environment.IsDevelopment())
@@ -39,7 +44,7 @@ app.MapGet("/", () =>
 
 app.MapPost("/trial", (Trial NewTrial) =>
     {
-        Console.WriteLine("new trial: ", NewTrial);
+        Console.WriteLine("new trial: "+NewTrial);
         return Results.Created("/trial",NewTrial);
     }
 ).WithName("TrialPost");
