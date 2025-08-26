@@ -10,9 +10,9 @@ services:
     volumes:
       - pgdata:/var/lib/postgresql/data
     environment:
-      POSTGRES_PASSWORD: 123456
-      POSTGRES_USER: neukod-ale
-      POSTGRES_DB: neukod
+      POSTGRES_PASSWORD: ${POSTGRES_PASS}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_DB: ${POSTGRES_DB}
 
   adminer:
     image: adminer

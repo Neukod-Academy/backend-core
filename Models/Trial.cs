@@ -2,16 +2,12 @@ using System.ComponentModel;
 using System.Text.Json.Serialization;
 using Newtonsoft.Json;
 
-class Trial
+public class Trial
 {
+    public required string Id { get; set; }
     public int Duration { get; set; } = 30;
-    [JsonPropertyName("appointment")]
-    public DateTime? Appointment { get; set; }
-    [JsonPropertyName("country")]
-    public String? Country { get; set; }
-    [JsonPropertyName("parent")]
-    public User? Parent { get; set; }
-    [JsonPropertyName("course")]
-    public String? Course { get; set; }
+    public required DateTime? Appointment { get; set; }
+    public required User? Parent { get; set; }
+    public required string? Course { get; set; }
 
 }

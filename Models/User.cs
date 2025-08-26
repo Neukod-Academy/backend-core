@@ -1,16 +1,20 @@
 
+using System.ComponentModel.DataAnnotations;
 using System.Text.Json.Serialization;
 
-class User
+public class User
 {
-    [JsonPropertyName("name")]
-    public String? Name { get; set; }
-    [JsonPropertyName("role")]
+    public required string Name { get; set; }
+    public string? Phone { get; set; }
+    public string? Email{ get; set; }
     public Role Role { get; set; }
+    public required string? Country { get; set; }
+    public DateTime RegisteredAt { get; set; }
+    public DateTime UpdatedAt{ get; set; }
 }
 
 
-enum Role
+public enum Role
 {
     Visitor,
     Parent,
