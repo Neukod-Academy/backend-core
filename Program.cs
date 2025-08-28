@@ -1,8 +1,10 @@
 using System.Reflection.Metadata.Ecma335;
 using System.Text.Json.Serialization;
+using Microsoft.EntityFrameworkCore;
 using Npgsql;
 
 
+var builder = WebApplication.CreateBuilder(args);
 DotNetEnv.Env.Load();
 var POSTGRES_HOST = System.Environment.GetEnvironmentVariable("POSTGRES_HOST_DOCKER");
 var POSTGRES_USER = System.Environment.GetEnvironmentVariable("POSTGRES_USER");
@@ -13,7 +15,10 @@ await using var dataSource = NpgsqlDataSource.Create(connectionString);
 await using var conn = await dataSource.OpenConnectionAsync() ?? throw new Exception("failed to create database connection!");
 Console.WriteLine("PostgresSQL connection established");
 
-var builder = WebApplication.CreateBuilder(args);
+builder.Services.AddDbContext<AppDbContext>(options =>
+{
+    options.UseNpgsql(connectionString);
+});
 
 builder.Services.AddOpenApi();
 builder.Services.AddEndpointsApiExplorer();
@@ -29,6 +34,7 @@ builder.Services.ConfigureHttpJsonOptions(options =>
 {
     options.SerializerOptions.Converters.Add(new JsonStringEnumConverter());
 });
+
 
 var app = builder.Build();
 
@@ -52,17 +58,22 @@ app.MapGet("/", () =>
 }).WithName("HelloApi");
 
 
-app.MapGet("/trials", ()=>
+app.MapGet("/trials", async (AppDbContext db)=>
 {
-    var repo = new TrialRepository(connectionString);
-    return repo.GetTrialsAsync();
-});
+    var trials = await db.Trials
+        .Include(t => t.Parent)
+        .Include(t => t.Course)
+        .ToListAsync();
+    return Results.Ok(trials);
+}
+);
 
-app.MapPost("/trials", (Trial NewTrial) =>
-    {
-        Console.WriteLine("new trial: "+NewTrial);
-        return Results.Created("/trials",NewTrial);
-    }
+app.MapPost("/trials", async (Trial newTrial, AppDbContext db) =>
+{
+    await db.Trials.AddAsync(newTrial);
+    await db.SaveChangesAsync();
+    return Results.Created($"/trials/{newTrial.Id}", newTrial);
+}
 ).WithName("TrialPost");
 
 app.Run();

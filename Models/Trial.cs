@@ -4,10 +4,9 @@ using Newtonsoft.Json;
 
 public class Trial
 {
-    public required string Id { get; set; }
+    public Guid Id { get; set; } = Guid.NewGuid();
     public int Duration { get; set; } = 30;
-    public required DateTime? Appointment { get; set; }
-    public required User? Parent { get; set; }
-    public required string? Course { get; set; }
-
+    public DateTime Appointment { get; set; }
+    public User? Parent { get; set; }
+    public Course? Course { get; set; }
 }
