@@ -7,6 +7,8 @@ public class Trial
     public Guid Id { get; private set; } = Guid.NewGuid();
     public int Duration { get; set; } = 30;
     public DateTime Appointment { get; set; }
-    public required User Parent { get; set; }
-    public required Course Course { get; set; }
+    public int ParentId { get; set; }
+    public int CourseId { get; set; }
+    public User? Parent { get; set; }
+    public Course? Course { get; set; }
 }

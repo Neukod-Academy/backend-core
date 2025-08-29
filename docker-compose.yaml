@@ -1,5 +1,15 @@
 services:
-
+  backend-core:
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+    restart: always
+    ports:
+      - 5049:5049
+    env_file:
+      - .env
+    depends_on:
+      - postgres
   postgres:
     image: postgres:17.6-alpine3.22
     restart: always
@@ -21,4 +31,4 @@ services:
       - 8080:8080
 
 volumes:
-    pgdata:
+  pgdata:

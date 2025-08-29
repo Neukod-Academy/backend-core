@@ -12,33 +12,63 @@ public class AppDbContext : DbContext
         modelBuilder.Entity<User>(entity =>
         {
             entity.HasKey(u => u.Id);
-            entity.Property(u => u.Name).IsRequired();
+
+            entity.Property(u => u.Id)
+                .ValueGeneratedOnAdd();
+
+            entity.Property(u => u.Name)
+                .IsRequired()
+                .HasMaxLength(128);
+
+            entity.Property(u => u.Phone)
+                .HasMaxLength(20);
+
+            entity.Property(u => u.Email)
+                .HasMaxLength(100);
+
+            entity.Property(u => u.Country)
+                .HasMaxLength(3);
+
+            entity.Property(u => u.Role)
+                .HasConversion<string>();
+
             entity.Property(u => u.RegisteredAt)
-                  .HasDefaultValueSql("CURRENT_TIMESTAMP");
+                .HasDefaultValueSql("CURRENT_TIMESTAMP");
             entity.Property(u => u.UpdatedAt)
-                  .HasDefaultValueSql("CURRENT_TIMESTAMP");
+                .HasDefaultValueSql("CURRENT_TIMESTAMP");
         });
 
         modelBuilder.Entity<Trial>(entity =>
         {
             entity.HasKey(t => t.Id);
+
             entity.Property(t => t.Id)
-                .ValueGeneratedNever(); // use C# GUID
+                .ValueGeneratedNever();
+
             entity.Property(t => t.Duration)
                 .HasDefaultValue(30);
+
             entity.Property(t => t.Appointment)
                 .IsRequired();
 
             entity.HasOne(t => t.Parent)
-                  .WithMany(u => u.Trials)
-                  .HasForeignKey("ParentId")
+                  .WithMany()
+                  .HasForeignKey(t => t.ParentId)
                   .IsRequired()
                   .OnDelete(DeleteBehavior.Cascade);
 
             entity.HasOne(t => t.Course)
-                  .WithMany(c => c.Trials)
-                  .HasForeignKey("CourseId")
+                  .WithMany()
+                  .HasForeignKey(t => t.CourseId)
                   .IsRequired();
+        });
+
+        modelBuilder.Entity<Course>(entity =>
+        {
+            entity.HasKey(c => c.Id);
+            entity.Property(c => c.Name)
+                .IsRequired()
+                .HasMaxLength(128);
         });
 
         base.OnModelCreating(modelBuilder);

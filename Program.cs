@@ -46,29 +46,35 @@ if (app.Environment.IsDevelopment())
     app.UseOpenApi();
     app.Use(async (context, next) =>
     {
-        var authHeader = context.Request.Headers["Authorization"].FirstOrDefault();
-
-        if (authHeader != null && authHeader.StartsWith("Basic "))
+        if (context.Request.Path.StartsWithSegments("/swagger") || context.Request.Path.StartsWithSegments("/openapi"))
         {
-            var encodedUsernamePassword = authHeader.Substring("Basic ".Length).Trim();
-            var decodedBytes = Convert.FromBase64String(encodedUsernamePassword);
-            var decoded = System.Text.Encoding.UTF8.GetString(decodedBytes);
-            var parts = decoded.Split(':', 2);
-
-            var username = parts[0];
-            var password = parts[1];
-
-            if (username == "neukod" && password == "uyeuye")
+            var authHeader = context.Request.Headers["Authorization"].FirstOrDefault();
+            if (authHeader != null && authHeader.StartsWith("Basic "))
             {
-                await next();
-                return;
-            }
-        }
+                var encodedUsernamePassword = authHeader.Substring("Basic ".Length).Trim();
+                var decodedBytes = Convert.FromBase64String(encodedUsernamePassword);
+                var decoded = System.Text.Encoding.UTF8.GetString(decodedBytes);
+                var parts = decoded.Split(':', 2);
 
-        // Unauthorized
-        context.Response.Headers["WWW-Authenticate"] = "Basic realm=\"Swagger UI\"";
-        context.Response.StatusCode = 401;
-        await context.Response.WriteAsync("Unauthorized");
+                var username = parts[0];
+                var password = parts[1];
+
+                if (username == "neukod" && password == "uyeuye")
+                {
+                    await next();
+                    return;
+                }
+            }
+
+            // Unauthorized
+            context.Response.Headers["WWW-Authenticate"] = "Basic realm=\"Swagger UI\"";
+            context.Response.StatusCode = 401;
+            await context.Response.WriteAsync("Unauthorized");
+        }
+        else
+        {
+            await next();
+        }
     });
     app.UseSwaggerUi(config =>
     {
@@ -80,13 +86,13 @@ if (app.Environment.IsDevelopment())
 }
 
 
+var api = app.MapGroup("/api");
+
 app.MapGet("/", () =>
 {
     return "hello from neukod backend core!";
 }).WithName("HelloApi");
-
-
-app.MapGet("/trials", async (AppDbContext db)=>
+api.MapGet("/trials", async (AppDbContext db) =>
 {
     var trials = await db.Trials
         .Include(t => t.Parent)
@@ -94,22 +100,101 @@ app.MapGet("/trials", async (AppDbContext db)=>
         .ToListAsync();
     return Results.Ok(trials);
 }
-);
-
-app.MapPost("/trials", async (TrialCreateRequest request, AppDbContext db) =>
+).WithName("GetTrials");
+api.MapPost("/trials", async (TrialCreateRequest request, AppDbContext db) =>
 {
+    var user = await db.Users.FirstOrDefaultAsync(u => u.Email == request.Parent.Email);
+    if (user == null)
+    {
+        User newUser = new User
+        {
+            Name = request.Parent.Name,
+            Email = request.Parent.Email,
+            Country = request.Parent.Country,
+            Phone = request.Parent.Phone,
+            Role = Role.Parent,
+            RegisteredAt = DateTime.UtcNow,
+            UpdatedAt = DateTime.UtcNow,
+        };
+        try
+        {
+            await db.Users.AddAsync(newUser);
+            await db.SaveChangesAsync();
+        }
+        catch (DbUpdateException ex)
+        {
+            return Results.BadRequest($"Database error: {ex.Message}");
+        }
+        catch (Exception ex)
+        {
+            return Results.Problem($"An unexpected error occurered: {ex.Message}");
+        }
+        user = newUser;
+    }
+    Trial newTrial = new Trial
+    {
+        Duration = request.Duration,
+        Appointment = request.Appointment,
+        ParentId = user.Id,
+        CourseId = request.CourseId
+    };
     var course = await db.Courses.FindAsync(request.CourseId);
     if (course == null)
     {
         return Results.BadRequest("this course is still not available yet, come back later!");
     }
-    var user = await db.Users.FirstOrDefaultAsync(u => u.Email == request.Parent.Email);
-    if (user == null)
+    try
     {
-        return Results.BadRequest("this parent account have not registered yet");
+        var existingTrial = await db.Trials.FirstOrDefaultAsync(t =>
+            t.ParentId == user.Id &&
+            t.CourseId == request.CourseId &&
+            t.Appointment == request.Appointment);
+        if (existingTrial != null)
+        {
+            return Results.Conflict("You have already booked a trial for this course at the same time.");
+        }
     }
+    catch (Exception ex)
+    {
+        return Results.Problem($"An unexpected error occurered: {ex.Message}");
+    }
+    await db.Trials.AddAsync(newTrial);
+    await db.SaveChangesAsync();
     return Results.Created();
 }
 ).WithName("TrialPost");
-
+api.MapPost("/courses", async (CourseCreateRequest request, AppDbContext db) =>
+{
+    if (string.IsNullOrWhiteSpace(request.Name))
+    {
+        return Results.BadRequest("Course name is required.");
+    }
+    try
+    {
+        Course newCourse = new Course
+        {
+            Name = request.Name
+        };
+        await db.Courses.AddAsync(newCourse);
+        await db.SaveChangesAsync();
+    }
+    catch (DbUpdateException ex)
+    {
+        return Results.BadRequest($"Database error: {ex.Message}");
+    }
+    catch (Exception ex)
+    {
+        return Results.Problem($"An unexpected error occurered: {ex.Message}");
+    }
+    return Results.Created();
+}).WithName("CoursePost");
+api.MapGet("/courses", async (AppDbContext db) =>
+{
+    var courses = await db.Courses.Select(c => new CourseResponse
+    {
+        Id = c.Id,
+        Name = c.Name
+    }).ToListAsync();
+    return Results.Ok(courses);
+});
 app.Run();
