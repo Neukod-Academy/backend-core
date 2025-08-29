@@ -8,7 +8,7 @@ public class User
     public required string Name { get; set; }
     public string? Phone { get; set; }
     public string? Email { get; set; }
-    public Role Role { get; set; }
+    public Role Role { get; set; } = Role.Parent;
     public string? Country { get; set; }
     public DateTime RegisteredAt { get; set; }
     public DateTime UpdatedAt { get; set; }

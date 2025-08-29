@@ -51,8 +51,8 @@ namespace backend_core.Migrations
                     Id = table.Column<Guid>(type: "uuid", nullable: false),
                     Duration = table.Column<int>(type: "integer", nullable: false, defaultValue: 30),
                     Appointment = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
-                    ParentId = table.Column<int>(type: "integer", nullable: true),
-                    CourseId = table.Column<int>(type: "integer", nullable: true)
+                    ParentId = table.Column<int>(type: "integer", nullable: false),
+                    CourseId = table.Column<int>(type: "integer", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -61,7 +61,8 @@ namespace backend_core.Migrations
                         name: "FK_Trials_Courses_CourseId",
                         column: x => x.CourseId,
                         principalTable: "Courses",
-                        principalColumn: "Id");
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
                     table.ForeignKey(
                         name: "FK_Trials_Users_ParentId",
                         column: x => x.ParentId,

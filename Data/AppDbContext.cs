@@ -17,11 +17,6 @@ public class AppDbContext : DbContext
                   .HasDefaultValueSql("CURRENT_TIMESTAMP");
             entity.Property(u => u.UpdatedAt)
                   .HasDefaultValueSql("CURRENT_TIMESTAMP");
-
-            entity.HasMany(u => u.Trials)
-                  .WithOne(t => t.Parent)
-                  .HasForeignKey("ParentId")
-                  .OnDelete(DeleteBehavior.Cascade);
         });
 
         modelBuilder.Entity<Trial>(entity =>
@@ -37,11 +32,13 @@ public class AppDbContext : DbContext
             entity.HasOne(t => t.Parent)
                   .WithMany(u => u.Trials)
                   .HasForeignKey("ParentId")
+                  .IsRequired()
                   .OnDelete(DeleteBehavior.Cascade);
 
             entity.HasOne(t => t.Course)
                   .WithMany(c => c.Trials)
-                  .HasForeignKey("CourseId");
+                  .HasForeignKey("CourseId")
+                  .IsRequired();
         });
 
         base.OnModelCreating(modelBuilder);

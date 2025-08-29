@@ -1,5 +1,6 @@
 using System.Reflection.Metadata.Ecma335;
 using System.Text.Json.Serialization;
+using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.EntityFrameworkCore;
 using Npgsql;
 
@@ -43,6 +44,32 @@ if (app.Environment.IsDevelopment())
 {
     app.MapOpenApi();
     app.UseOpenApi();
+    app.Use(async (context, next) =>
+    {
+        var authHeader = context.Request.Headers["Authorization"].FirstOrDefault();
+
+        if (authHeader != null && authHeader.StartsWith("Basic "))
+        {
+            var encodedUsernamePassword = authHeader.Substring("Basic ".Length).Trim();
+            var decodedBytes = Convert.FromBase64String(encodedUsernamePassword);
+            var decoded = System.Text.Encoding.UTF8.GetString(decodedBytes);
+            var parts = decoded.Split(':', 2);
+
+            var username = parts[0];
+            var password = parts[1];
+
+            if (username == "neukod" && password == "uyeuye")
+            {
+                await next();
+                return;
+            }
+        }
+
+        // Unauthorized
+        context.Response.Headers["WWW-Authenticate"] = "Basic realm=\"Swagger UI\"";
+        context.Response.StatusCode = 401;
+        await context.Response.WriteAsync("Unauthorized");
+    });
     app.UseSwaggerUi(config =>
     {
         config.DocumentTitle = "NeukodCoreAPI";
@@ -71,15 +98,17 @@ app.MapGet("/trials", async (AppDbContext db)=>
 
 app.MapPost("/trials", async (TrialCreateRequest request, AppDbContext db) =>
 {
-    var newTrial = new Trial
+    var course = await db.Courses.FindAsync(request.CourseId);
+    if (course == null)
     {
-        Appointment = request.Appointment,
-        Parent = request.Parent,
-        Course = request.Course,
-    };
-    await db.Trials.AddAsync(newTrial);
-    await db.SaveChangesAsync();
-    return Results.Created($"/trials/{newTrial.Id}", newTrial);
+        return Results.BadRequest("this course is still not available yet, come back later!");
+    }
+    var user = await db.Users.FirstOrDefaultAsync(u => u.Email == request.Parent.Email);
+    if (user == null)
+    {
+        return Results.BadRequest("this parent account have not registered yet");
+    }
+    return Results.Created();
 }
 ).WithName("TrialPost");
 

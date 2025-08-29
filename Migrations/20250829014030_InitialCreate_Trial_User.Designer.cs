@@ -11,7 +11,7 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace backend_core.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20250828100304_InitialCreate_Trial_User")]
+    [Migration("20250829014030_InitialCreate_Trial_User")]
     partial class InitialCreate_Trial_User
     {
         /// <inheritdoc />
@@ -49,7 +49,7 @@ namespace backend_core.Migrations
                     b.Property<DateTime>("Appointment")
                         .HasColumnType("timestamp with time zone");
 
-                    b.Property<int?>("CourseId")
+                    b.Property<int>("CourseId")
                         .HasColumnType("integer");
 
                     b.Property<int>("Duration")
@@ -57,7 +57,7 @@ namespace backend_core.Migrations
                         .HasColumnType("integer")
                         .HasDefaultValue(30);
 
-                    b.Property<int?>("ParentId")
+                    b.Property<int>("ParentId")
                         .HasColumnType("integer");
 
                     b.HasKey("Id");
@@ -112,12 +112,15 @@ namespace backend_core.Migrations
                 {
                     b.HasOne("Course", "Course")
                         .WithMany("Trials")
-                        .HasForeignKey("CourseId");
+                        .HasForeignKey("CourseId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
 
                     b.HasOne("User", "Parent")
                         .WithMany("Trials")
                         .HasForeignKey("ParentId")
-                        .OnDelete(DeleteBehavior.Cascade);
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
 
                     b.Navigation("Course");
 
