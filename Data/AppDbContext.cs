@@ -30,7 +30,7 @@ public class AppDbContext : DbContext
                 .HasMaxLength(3);
 
             entity.Property(u => u.Role)
-                .HasConversion<string>();
+                .HasConversion<int>();
 
             entity.Property(u => u.RegisteredAt)
                 .HasDefaultValueSql("CURRENT_TIMESTAMP");

@@ -1,5 +1,7 @@
 services:
   backend-core:
+    image: backend-core:dev
+    container_name: backend-core
     build:
       context: .
       dockerfile: Dockerfile.dev
@@ -8,10 +10,14 @@ services:
       - 5049:5049
     env_file:
       - .env
+    environment:
+      - ASPNETCORE_URLS=http://+:5049
+      - ASPNETCORE_ENVIRONMENT=Development
     depends_on:
       - postgres
   postgres:
     image: postgres:17.6-alpine3.22
+    container_name: postgres
     restart: always
     # set shared memory limit when using docker compose
     shm_size: 128mb
@@ -25,6 +31,7 @@ services:
       POSTGRES_DB: ${POSTGRES_DB}
 
   adminer:
+    container_name: adminer
     image: adminer
     restart: always
     ports:
