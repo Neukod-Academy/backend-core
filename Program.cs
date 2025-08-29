@@ -11,6 +11,7 @@ var POSTGRES_USER = System.Environment.GetEnvironmentVariable("POSTGRES_USER");
 var POSTGRES_PASS = System.Environment.GetEnvironmentVariable("POSTGRES_PASS");
 var POSTGRES_DB = System.Environment.GetEnvironmentVariable("POSTGRES_DB");
 var connectionString = $"Host={POSTGRES_HOST};Username={POSTGRES_USER};Password={POSTGRES_PASS};Database={POSTGRES_DB}";
+Console.WriteLine(connectionString);
 await using var dataSource = NpgsqlDataSource.Create(connectionString);
 await using var conn = await dataSource.OpenConnectionAsync() ?? throw new Exception("failed to create database connection!");
 Console.WriteLine("PostgresSQL connection established");
@@ -68,8 +69,14 @@ app.MapGet("/trials", async (AppDbContext db)=>
 }
 );
 
-app.MapPost("/trials", async (Trial newTrial, AppDbContext db) =>
+app.MapPost("/trials", async (TrialCreateRequest request, AppDbContext db) =>
 {
+    var newTrial = new Trial
+    {
+        Appointment = request.Appointment,
+        Parent = request.Parent,
+        Course = request.Course,
+    };
     await db.Trials.AddAsync(newTrial);
     await db.SaveChangesAsync();
     return Results.Created($"/trials/{newTrial.Id}", newTrial);
