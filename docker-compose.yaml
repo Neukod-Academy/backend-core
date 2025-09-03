@@ -19,11 +19,13 @@ services:
       - ASPNETCORE_ENVIRONMENT=Development
     depends_on:
       - postgres
+    networks:
+      - appnet
+    
   postgres:
     image: postgres:17.6-alpine3.22
     container_name: postgres
     restart: always
-    # set shared memory limit when using docker compose
     shm_size: 128mb
     ports:
       - "5432:5432"
@@ -33,6 +35,8 @@ services:
       POSTGRES_PASSWORD: ${POSTGRES_PASS}
       POSTGRES_USER: ${POSTGRES_USER}
       POSTGRES_DB: ${POSTGRES_DB}
+    networks:
+      - appnet
 
   adminer:
     container_name: adminer
@@ -40,6 +44,8 @@ services:
     restart: always
     ports:
       - 8080:8080
+    networks:
+      - appnet
 
 volumes:
   pgdata:
