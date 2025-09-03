@@ -1,3 +1,7 @@
+networks:
+  appnet:
+    driver: bridge
+
 services:
   backend-core:
     image: backend-core:dev
